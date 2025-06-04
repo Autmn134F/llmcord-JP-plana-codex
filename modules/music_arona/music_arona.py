@@ -22,9 +22,17 @@ def fmt_dur(sec: int) -> str:
 async def _display_name(bot: commands.Bot, guild: Optional[discord.Guild], user_id: int) -> str:
     """Return a *display name* (nickname if possible, else username)."""
     if guild:
-        m = guild.get_member(user_id) or await guild.fetch_member(user_id, default=None)
+        m = guild.get_member(user_id)
         if m:
             return m.display_name
+        try:
+            fetched = await guild.fetch_member(user_id)
+            if fetched:
+                return fetched.display_name
+        except discord.NotFound:
+            pass
+        except discord.HTTPException:
+            pass
     try:
         u = await bot.fetch_user(user_id)
         if u:
