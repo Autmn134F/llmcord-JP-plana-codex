@@ -1,6 +1,9 @@
-class ShittimError(Exception):
-    pass
+from modules.common.error import ConfigError, ConfigDefaultNotFoundError
 
-class ShittimConfigDefaultNotFoundError(ShittimError):
+class ShittimError(ConfigError):
     def __init__(self, message: str):
-        super().__init__(message)
+        super().__init__('shittim', message)
+
+class ShittimConfigDefaultNotFoundError(ConfigDefaultNotFoundError):
+    def __init__(self, message: str):
+        super().__init__('shittim', message)

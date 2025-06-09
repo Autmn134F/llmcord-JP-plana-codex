@@ -22,7 +22,7 @@ import sys
 from openai import AsyncOpenAI, RateLimitError
 
 from modules.llmcord_plana.plugins import load_plugins
-import modules.llmcord_plana.error.PlanaError as error
+import modules.common.error as error
 
 logging.basicConfig(
     level=logging.INFO,
@@ -776,7 +776,8 @@ class LLMcord(commands.Cog):
         if os.path.exists(cfg_path):
             return True
         if not os.path.exists(default_path):
-            raise error.PlanaDefaultConfigNotFound(
+            raise error.ConfigDefaultNotFoundError(
+                "llmcord_plana",
                 f"{default_path} が見つかりません。"
             )
         shutil.copy2(default_path, cfg_path)
@@ -788,5 +789,8 @@ class LLMcord(commands.Cog):
 
 async def setup(bot: commands.Bot):
     if not LLMcord.ensure_config():
-        raise error.PlanaFirstRunWarning("生成されたファイルを編集してから再度起動してください。")
+        raise error.FirstRunWarning(
+            "llmcord_plana",
+            "生成されたファイルを編集してから再度起動してください。"
+        )
     await bot.add_cog(LLMcord(bot))
