@@ -170,6 +170,61 @@ class Music(commands.Cog):
         else:
             await ctx.reply("再生していません。", silent=True)
 
+    async def _build_queue_embeds(self, guild: discord.Guild, player: GuildPlayer) -> list[discord.Embed]:
+        if player.current_track:
+            now_req = await _display_name(self.bot, guild, player.current_track.requester_id) if player.current_track.requester_id else "Unknown"
+            now_line = f"🎶 **Now**: {player.current_track.title} (req. **{now_req}** )"
+        else:
+            now_line = "🎶 **Now**: *(nothing playing)*"
+
+        pages = player.paged_upcoming(page_size=10)
+        embeds: list[discord.Embed] = []
+        for page_idx, tracks in enumerate(pages, start=1):
+            lines: list[str] = []
+            for idx, t in enumerate(tracks, start=1 + (page_idx - 1) * 10):
+                req = await _display_name(self.bot, guild, t.requester_id) if t.requester_id else "Unknown"
+                lines.append(f"{idx}. {t.title} (req. **{req}** )")
+            if not lines:
+                lines = ["*(キューは空です)*"]
+            desc = "\n".join([now_line] + lines)
+            embed = discord.Embed(title=f"Queue (Page {page_idx}/{len(pages)})", description=desc, color=discord.Color.blurple())
+            embeds.append(embed)
+
+        if not embeds:
+            embed = discord.Embed(title="Queue (Page 1/1)", description="\n".join([now_line, "*(キューは空です)*"]), color=discord.Color.blurple())
+            embeds.append(embed)
+        return embeds
+
+    class QueueView(discord.ui.View):
+        def __init__(self, embeds: list[discord.Embed]):
+            super().__init__(timeout=60)
+            self.embeds = embeds
+            self.index = 0
+            self.message: Optional[discord.Message] = None
+            self._update_buttons()
+
+        def _update_buttons(self):
+            self.prev.disabled = self.index <= 0
+            self.next.disabled = self.index >= len(self.embeds) - 1
+
+        async def on_timeout(self):
+            for item in self.children:
+                item.disabled = True
+            if self.message:
+                await self.message.edit(view=self)
+
+        @discord.ui.button(label="Prev", style=discord.ButtonStyle.secondary)
+        async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+            self.index -= 1
+            self._update_buttons()
+            await interaction.response.edit_message(embed=self.embeds[self.index], view=self)
+
+        @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
+        async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+            self.index += 1
+            self._update_buttons()
+            await interaction.response.edit_message(embed=self.embeds[self.index], view=self)
+
     @commands.hybrid_command(name="queue", description="現在のキューを表示")
     async def queue(self, ctx: commands.Context):
         await ctx.defer()
@@ -178,20 +233,10 @@ class Music(commands.Cog):
             await ctx.reply("再生していません。", silent=True)
             return
 
-        lines = []
-        if p.current_track:
-            req = await _display_name(self.bot, ctx.guild, p.current_track.requester_id) if p.current_track.requester_id else "Unknown"
-            lines.append(f"🎶 **Now**: {p.current_track.title} (req. **{req}**)")
-
-        up_next = p.upcoming()
-        if not up_next:
-            lines.append("*(キューは空です)*")
-        else:
-            for i, t in enumerate(up_next, start=1):
-                dn = await _display_name(self.bot, ctx.guild, t.requester_id) if t.requester_id else "Unknown"
-                lines.append(f"{i}. {t.title} (req. **{dn}**)")
-
-        await ctx.reply("\n".join(lines), silent=True)
+        embeds = await self._build_queue_embeds(ctx.guild, p)
+        view = self.QueueView(embeds)
+        msg = await ctx.reply(embed=embeds[0], view=view, silent=True)
+        view.message = msg
 
     @commands.hybrid_command(name="shuffle", description="キューをシャッフル")
     async def shuffle(self, ctx: commands.Context):
@@ -261,6 +306,18 @@ class Music(commands.Cog):
             player = self.players.pop(member.guild.id, None)
             if player:
                 await player.stop()
+            return
+
+        vc = member.guild.voice_client
+        if not vc or not vc.channel:
+            return
+
+        if before.channel == vc.channel or after.channel == vc.channel:
+            non_bots = [m for m in vc.channel.members if not m.bot]
+            if not non_bots:
+                player = self.players.pop(member.guild.id, None)
+                if player:
+                    await player.stop()
 
 async def setup(bot: commands.Bot):
     config = Config()
