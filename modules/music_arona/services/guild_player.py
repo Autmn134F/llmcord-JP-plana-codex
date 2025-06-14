@@ -59,6 +59,15 @@ class GuildPlayer:
         random.shuffle(tmp)
         self._queue = deque(tmp)
 
+    def paged_upcoming(self, *, page_size: int = 10) -> list[list[Track]]:
+        """Return upcoming tracks split into pages."""
+        pages: list[list[Track]] = [[]]
+        for t in self._queue:
+            if len(pages[-1]) >= page_size:
+                pages.append([])
+            pages[-1].append(t)
+        return pages
+
     def remove(self, position: int) -> Track:
         """0-based index の曲を除去して返す。"""
         if position < 0 or position >= len(self._queue):
