@@ -1,23 +1,35 @@
-class AronaError(Exception):
+from modules.common.error import (
+    ConfigError,
+    ConfigDefaultNotFoundError,
+    FirstRunWarning,
+)
+
+
+class AronaError(ConfigError):
     """ARONA系共通の基底例外"""
-    pass
+    def __init__(self, message: str):
+        super().__init__('music_arona', message)
+
 
 class AronaConfigNotFoundError(AronaError):
     HOW_TO_FIX = (
-        "[HOW TO FIX]: 通常は起動時に自動的に設定ファイルが生成されます。"
-        "基底コンフィグファイルが欠如している可能性があります。"
+        "[HOW TO FIX]: 通常は起動時に自動的に設定ファイルが生成されます。",
+        "基底コンフィグファイルが欠如している可能性があります。",
     )
 
     def __init__(self, message: str):
         super().__init__(f"{message}\n {self.HOW_TO_FIX}")
 
-class AronaDefaultConfigNotFound(AronaError):
+
+class AronaDefaultConfigNotFound(ConfigDefaultNotFoundError):
     HOW_TO_FIX = (
-        "[HOW TO FIX]: 基底コンフィグファイルが欠如しています。再インストールするか、リポジトリから取得してください。"
+        "[HOW TO FIX]: 基底コンフィグファイルが欠如しています。再インストールするか、リポジトリから取得してください。",
     )
-    def __init__(self, message: str):
-        super().__init__(f"{message}\n {self.HOW_TO_FIX}")
 
-class AronaFirstRunWarning(Warning):
     def __init__(self, message: str):
-        super().__init__(message)
+        super().__init__('music_arona', f"{message}\n {self.HOW_TO_FIX}")
+
+
+class AronaFirstRunWarning(FirstRunWarning):
+    def __init__(self, message: str):
+        super().__init__('music_arona', message)

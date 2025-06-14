@@ -11,7 +11,7 @@ from discord.ext import commands
 from modules.music_arona.services import ytdlp_wrapper as ytdl
 from modules.music_arona.services.guild_player import GuildPlayer
 from modules.music_arona.config import Config
-import modules.music_arona.error.AronaError as error
+import modules.common.error as error
 
 logger = logging.getLogger("arona.music")
 

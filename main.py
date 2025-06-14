@@ -6,7 +6,7 @@ import warnings
 from discord.ext import commands
 
 from config import Config
-import modules.shittim.error.ShittimError as error
+import modules.common.error as error
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -19,7 +19,7 @@ class Shittim(commands.Bot):
             for warning in w:
                 logging.warning(f"Warning while loading config:\n{warning.message}" + "ShittimでのWarningは致命的なものなので起動できません。")
                 sys.exit(1)
-        except error.ShittimConfigDefaultNotFoundError as e:
+        except error.ConfigDefaultNotFoundError as e:
             logging.error("Shittimのdefault.configファイルが見つかりませんでした。起動できません。再インストールするか、リポジトリから最新のdefault.configファイルを取得してください。")
             sys.exit(1)
 
