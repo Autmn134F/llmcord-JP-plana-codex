@@ -180,16 +180,6 @@ class LLMcord(commands.Cog):
             model,
             max_message_length,
         )
-
-    def _register_slash_commands(self) -> None:
-        tree = self.bot.tree
-
-        @tree.command(name="help", description="ヘルプメッセージを表示します")
-        async def _help(inter: discord.Interaction):
-            await inter.response.send_message(
-                self.cfg.get("help_message", "ヘルプメッセージが設定されていません。"),
-                ephemeral=False,
-            )
         
     def _enabled_tools(self) -> list[dict]:
         want = self.cfg.get("active_tools", None)

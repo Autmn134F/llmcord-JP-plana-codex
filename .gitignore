@@ -13,7 +13,7 @@
 !arona.config.default.yaml
 !docker-compose.yaml
 !requirements.txt
-!startPLANA.bat
+!startShittim.bat
 !modules
 !modules/**
 !modules/**/**
